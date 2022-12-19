@@ -1,0 +1,63 @@
+version: '3.2'
+
+services:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    network_mode: "host"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SERVER_HTTP_PORT: 24950
+      # GF_RENDERING_SERVER_URL: http://localhost:8081/render
+      # GF_RENDERING_CALLBACK_URL: http://localhost:24950/
+      # GF_LOG_FILTERS: rendering:debug
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./prometheus-datasource.yaml:/etc/grafana/provisioning/datasources/prometheus-datasource.yaml
+      - ./default-dashboards.yaml:/etc/grafana/provisioning/dashboards/default-dashboards.yaml
+      - ./node-exporter-full.json:/dashboards/node-exporter-full.json
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    network_mode: "host"
+    volumes:
+      - ./prometheus.conf:/etc/prometheus/prometheus.conf:ro
+    command:
+      - --web.listen-address=127.0.0.1:24949
+      - --config.file=/etc/prometheus/prometheus.conf
+      - --storage.tsdb.retention.time=15d
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+      - --collector.textfile.directory
+      - /data/textfile_collector
+    pid: host
+    network_mode: "host"
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+      - textfile_collector:/data/textfile_collector
+
+  process_collector:
+    image: ubuntu
+    container_name: process_collector
+    command:
+      - /process_exporter.sh
+    pid: host
+    network_mode: "host"
+    volumes:
+      - textfile_collector:/data/textfile_collector
+      - ./process_exporter.sh:/process_exporter.sh
+
+volumes:
+  textfile_collector:
+# grafana-image-renderer:
+#   container_name: grafana-image-renderer
+#   image: gitlab.int.catalystcloud.nz:4567/catalystcloud/grafana-image-renderer:latest
+#   network_mode: "host"
+
