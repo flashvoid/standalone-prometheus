@@ -52,10 +52,13 @@ services:
     network_mode: "host"
     volumes:
       - textfile_collector:/data/textfile_collector
+      - :/data/textfile_collector
+      - logs:/data/logs
       - ./process_exporter.sh:/process_exporter.sh
 
 volumes:
   textfile_collector:
+  logs:
 # grafana-image-renderer:
 #   container_name: grafana-image-renderer
 #   image: gitlab.int.catalystcloud.nz:4567/catalystcloud/grafana-image-renderer:latest
